@@ -1,10 +1,15 @@
+/**
+ * joinNoti.js
+ * CI safe, Node.js ready
+ */
+
 const fsExtra = require("fs-extra");
 const pathModule = require("path");
 
 module.exports.config = {
     name: "joinNoti",
     eventType: ["log:subscribe"],
-    version: "1.0.1",
+    version: "1.0.2",
     credits: "𝐂𝐘𝐁𝐄𝐑 ☢️_𖣘 -𝐁𝐎𝐓 ⚠️ 𝑻𝑬𝑨𝑴_ ☢️",
     description: "Notification of bots or people entering groups with random gif/photo/video",
     dependencies: {
@@ -18,11 +23,11 @@ module.exports.onLoad = function () {
     const { existsSync, mkdirSync } = fsExtra;
     const { join } = pathModule;
 
-    const path = join(__dirname, "cache", "joinvideo");
-    if (!existsSync(path)) mkdirSync(path, { recursive: true });
+    const joinVideoDir = join(__dirname, "cache", "joinvideo");
+    if (!existsSync(joinVideoDir)) mkdirSync(joinVideoDir, { recursive: true });
 
-    const path2 = join(__dirname, "cache", "joinvideo", "randomgif");
-    if (!existsSync(path2)) mkdirSync(path2, { recursive: true });
+    const randomGifDir = join(joinVideoDir, "randomgif");
+    if (!existsSync(randomGifDir)) mkdirSync(randomGifDir, { recursive: true });
 };
 
 module.exports.run = async function({ api, event }) {
@@ -32,10 +37,15 @@ module.exports.run = async function({ api, event }) {
 
     try {
         // যদি বট নিজেই গ্রুপে যোগ হয়
-        if (event.logMessageData.addedParticipants.some(i => i.userFbId == api.getCurrentUserID())) {
-            api.changeNickname(`[ ${global.config.PREFIX} ] • ${global.config.BOTNAME || ""}`, threadID, api.getCurrentUserID());
+        if (event.logMessageData.addedParticipants.some(p => p.userFbId == api.getCurrentUserID())) {
+            api.changeNickname(
+                `[ ${global.config.PREFIX || ""} ] • ${global.config.BOTNAME || ""}`,
+                threadID,
+                api.getCurrentUserID()
+            );
+
             return api.sendMessage(
-                { body: "স্বাগত! 🙏", attachment: createReadStream(__dirname + "/cache/ullash.mp4") },
+                { body: "স্বাগত! 🙏", attachment: createReadStream(join(__dirname, "cache", "ullash.mp4")) },
                 threadID
             );
         }
@@ -56,7 +66,7 @@ module.exports.run = async function({ api, event }) {
         memLength.sort((a, b) => a - b);
 
         // message template
-        let msg = threadData.customJoin || 
+        let msg = threadData.customJoin ||
 `╭•┄┅═══❁🌺❁═══┅┄•╮
    আসসালামু আলাইকুম-!!🖤
 ╰•┄┅═══❁🌺❁═══┅┄•╯
@@ -76,18 +86,14 @@ module.exports.run = async function({ api, event }) {
             .replace(/\{soThanhVien}/g, memLength.join(', '))
             .replace(/\{threadName}/g, threadName);
 
-        // যদি গ্রুপ স্পেস না থাকে, ডিরেক্টরি বানাও
-        const joinVideoDir = join(__dirname, "cache", "joinvideo");
-        if (!existsSync(joinVideoDir)) fsExtra.mkdirSync(joinVideoDir, { recursive: true });
-
         // random gif
-        const randomGifDir = join(joinVideoDir, "randomgif");
+        const randomGifDir = join(__dirname, "cache", "joinvideo", "randomgif");
         const randomFiles = existsSync(randomGifDir) ? readdirSync(randomGifDir) : [];
 
         let formPush;
         if (existsSync(pathVideo)) {
             formPush = { body: msg, attachment: createReadStream(pathVideo), mentions };
-        } else if (randomFiles.length != 0) {
+        } else if (randomFiles.length > 0) {
             const pathRandom = join(randomGifDir, randomFiles[Math.floor(Math.random() * randomFiles.length)]);
             formPush = { body: msg, attachment: createReadStream(pathRandom), mentions };
         } else {
@@ -97,6 +103,6 @@ module.exports.run = async function({ api, event }) {
         return api.sendMessage(formPush, threadID);
 
     } catch (e) {
-        console.log("JoinNoti Error:", e.stack || e);
+        console.error("JoinNoti Error:", e.stack || e);
     }
 };
