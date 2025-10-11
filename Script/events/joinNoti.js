@@ -1,7 +1,7 @@
 module.exports.config = {
     name: "joinNoti",
     eventType: ["log:subscribe"],
-    version: "1.0.2",
+    version: "1.0.3",
     credits: "𝐂𝐘𝐁𝐄𝐑 ☢️_𖣘 -𝐁𝐎𝐓 ⚠️ 𝑻𝑬𝑨𝑴_ ☢️",
     description: "Notification of bots or people entering groups with random gif/photo/video",
     dependencies: {
@@ -27,12 +27,12 @@ module.exports.onLoad = function () {
 module.exports.run = async function({ api, event }) {
     const { join } = global.nodemodule["path"];
     const { threadID } = event;
-    
+
     // যদি বট যোগ হয়
     if (event.logMessageData.addedParticipants.some(i => i.userFbId == api.getCurrentUserID())) {
         api.changeNickname(`[ ${global.config.PREFIX} ] • ${(!global.config.BOTNAME) ? " " : global.config.BOTNAME}`, threadID, api.getCurrentUserID());
         const fs = require("fs");
-        return api.sendMessage("", event.threadID, () => api.sendMessage({
+        return api.sendMessage("", threadID, () => api.sendMessage({
             body: `╭•┄┅═══❁🌺❁═══┅┄•╮\n   আসসালামু আলাইকুম-!!🖤💫\n╰•┄┅═══❁🌺❁═══┅┄•╯
 
 ________________________
@@ -56,7 +56,7 @@ ${global.config.PREFIX}Help\n${global.config.PREFIX} Manu
 
             const threadData = global.data.threadData.get(parseInt(threadID)) || {};
             const path = join(__dirname, "cache", "joinvideo");
-            const pathGif = join(path, `${threadID}.video`);
+            const pathGif = join(path, `${threadID}.mp4`); // থ্রেড স্পেসিফিক ভিডিও
 
             var mentions = [], nameArray = [], memLength = [], i = 0;
             for (id in event.logMessageData.addedParticipants) {
@@ -89,19 +89,24 @@ ${global.config.PREFIX}Help\n${global.config.PREFIX} Manu
             var randomFunny = funnyMessages[Math.floor(Math.random() * funnyMessages.length)];
             msg = msg + "\n\n" + randomFunny.replace(/\{name}/g, nameArray.join(', '));
 
-            if (existsSync(path)) mkdirSync(path, { recursive: true });
+            if (!existsSync(path)) mkdirSync(path, { recursive: true });
 
-            const randomPath = readdirSync(join(__dirname, "cache", "joinGif", "randomgif"));
+            // র‍্যান্ডম GIF/ভিডিও
+            const randomPathArr = readdirSync(join(__dirname, "cache", "joinvideo", "randomgif"));
 
             let formPush;
-            if (existsSync(pathGif)) formPush = { body: msg, attachment: createReadStream(pathGif), mentions }
-            else if (randomPath.length != 0) {
-                const pathRandom = join(__dirname, "cache", "joinGif", "randomgif", `${randomPath[Math.floor(Math.random() * randomPath.length)]}`);
-                formPush = { body: msg, attachment: createReadStream(pathRandom), mentions }
+            if (existsSync(pathGif)) {
+                formPush = { body: msg, attachment: createReadStream(pathGif), mentions };
+            } else if (randomPathArr.length > 0) {
+                const pathRandom = join(__dirname, "cache", "joinvideo", "randomgif", randomPathArr[Math.floor(Math.random() * randomPathArr.length)]);
+                formPush = { body: msg, attachment: createReadStream(pathRandom), mentions };
+            } else {
+                formPush = { body: msg, mentions };
             }
-            else formPush = { body: msg, mentions }
 
             return api.sendMessage(formPush, threadID);
-        } catch (e) { return console.log(e) };
+        } catch (e) {
+            console.log(e);
+        }
     }
-                           }
+                }
