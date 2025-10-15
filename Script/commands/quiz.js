@@ -8,11 +8,12 @@ module.exports.config = {
     cooldowns: 5,
     dependencies: {
         "axios": "",
-        "google-translate-api-x": ""
+        "he": ""
     }
 };
 
-const translate = require("google-translate-api-x");
+const axios = global.nodemodule["axios"];
+const he = require("he"); // HTML decode
 
 module.exports.handleReaction = ({ api, event, handleReaction }) => {
     if (event.userID != handleReaction.author) return;
@@ -33,21 +34,22 @@ module.exports.handleReaction = ({ api, event, handleReaction }) => {
 }
 
 module.exports.run = async ({ api, event, args }) => {
-    const axios = global.nodemodule["axios"];
     let difficulties = ["easy", "medium", "hard"];
     let difficulty = args[0];
     if (!difficulties.includes(difficulty)) difficulty = difficulties[Math.floor(Math.random() * difficulties.length)];
 
     let fetch = await axios(`https://opentdb.com/api.php?amount=1&encode=url3986&type=boolean&difficulty=${difficulty}`);
-    if (!fetch.data || !fetch.data.results || fetch.data.results.length == 0) return api.sendMessage("⚠️ প্রশ্ন পাওয়া যায়নি, সার্ভার ব্যস্ত।", event.threadID);
+    if (!fetch.data || !fetch.data.results || fetch.data.results.length == 0) 
+        return api.sendMessage("⚠️ প্রশ্ন পাওয়া যায়নি, সার্ভার ব্যস্ত।", event.threadID);
 
-    let question = decodeURIComponent(fetch.data.results[0].question);
+    let question = he.decode(decodeURIComponent(fetch.data.results[0].question));
 
-    // Translate to Bangla
+    // Translate.js ব্যবহার করলে এখানে call করা যাবে, অন্যথায় question English থাকবে
     let banglaQuestion = question;
     try {
-        const res = await translate(question, { to: "bn" });
-        banglaQuestion = res.text;
+        if (global.translateMessage) { // translate.js এ ফাংশন থাকলে
+            banglaQuestion = await global.translateMessage(question, "bn");
+        }
     } catch (err) {
         console.log("Translate error, using English question:", err.message);
     }
@@ -73,4 +75,4 @@ module.exports.run = async ({ api, event, args }) => {
             }
         }
     );
-		}
+}
