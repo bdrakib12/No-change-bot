@@ -12,8 +12,10 @@ module.exports.config = {
     }
 };
 
-const axios = global.nodemodule["axios"];
-const he = require("he"); // HTML decode
+const axios = require("axios");
+const he = require("he");
+
+const translateMessage = global.translateMessage || (async (text, lang) => text);
 
 module.exports.handleReaction = ({ api, event, handleReaction }) => {
     if (event.userID != handleReaction.author) return;
@@ -43,16 +45,7 @@ module.exports.run = async ({ api, event, args }) => {
         return api.sendMessage("⚠️ প্রশ্ন পাওয়া যায়নি, সার্ভার ব্যস্ত।", event.threadID);
 
     let question = he.decode(decodeURIComponent(fetch.data.results[0].question));
-
-    // Translate.js ব্যবহার করলে এখানে call করা যাবে, অন্যথায় question English থাকবে
-    let banglaQuestion = question;
-    try {
-        if (global.translateMessage) { // translate.js এ ফাংশন থাকলে
-            banglaQuestion = await global.translateMessage(question, "bn");
-        }
-    } catch (err) {
-        console.log("Translate error, using English question:", err.message);
-    }
+    let banglaQuestion = await translateMessage(question, "bn");
 
     return api.sendMessage(
         `📝 প্রশ্ন:\n${banglaQuestion}\n\n👍: সত্য (True)     😢: মিথ্যা (False)`,
@@ -66,8 +59,8 @@ module.exports.run = async ({ api, event, args }) => {
                 answerYet: 0
             });
 
-            // 20 সেকেন্ড টাইমআউট
             await new Promise(resolve => setTimeout(resolve, 20000));
+
             const indexOfHandle = global.client.handleReaction.findIndex(e => e.messageID == info.messageID);
             if (indexOfHandle !== -1 && global.client.handleReaction[indexOfHandle].answerYet !== 1) {
                 api.sendMessage(`⏰ সময় শেষ! সঠিক উত্তর: ${fetch.data.results[0].correct_answer}`, event.threadID, info.messageID);
@@ -75,4 +68,4 @@ module.exports.run = async ({ api, event, args }) => {
             }
         }
     );
-}
+        }
