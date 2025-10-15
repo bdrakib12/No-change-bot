@@ -6,7 +6,7 @@ const DATA_FILE = path.join(__dirname, "fireMode.json");
 
 module.exports.config = {
   name: "fire",
-  version: "2.0.0",
+  version: "2.1.0",
   permission: 0,
   credits: "HOON x ChatGPT",
   description: "Cinematic Fire Mode 🔥 (Only HOON can toggle)",
@@ -18,10 +18,10 @@ module.exports.run = async function ({ api, event, args }) {
   const thread = event.threadID;
   const sub = (args[0] || "").toLowerCase();
 
-  // 🔒 প্রজা হলে কিছুই করবে না (reply ও না)
+  // 🔒 শুধুমাত্র HOON
   if (sender !== HOON_UID) return;
 
-  // আগের মোড স্টেট পড়া
+  // আগের স্টেট লোড
   let state = { enabled: false };
   if (fs.existsSync(DATA_FILE)) {
     try {
@@ -31,7 +31,7 @@ module.exports.run = async function ({ api, event, args }) {
     }
   }
 
-  // 🔥 ফায়ার ON করা হলে
+  // 🔥 Fire ON
   if (sub === "on") {
     if (state.enabled)
       return api.sendMessage("ফায়ার মোড ইতিমধ্যে ON আছে 🔥", thread);
@@ -39,7 +39,6 @@ module.exports.run = async function ({ api, event, args }) {
     state.enabled = true;
     fs.writeFileSync(DATA_FILE, JSON.stringify(state, null, 2));
 
-    // cinematic মেসেজ লিস্ট
     const fireMessages = [
       "🔥 সতর্কতা! ফায়ার মোড চালু হচ্ছে...",
       "⚙️ সিস্টেম পাওয়ার 9000+ এ পৌঁছেছে!",
@@ -48,15 +47,14 @@ module.exports.run = async function ({ api, event, args }) {
       "🔥 ফায়ার মোড সক্রিয় ✅\nSystem Temperature: 999°C 🌋",
     ];
 
-    // টাইমড মেসেজ পাঠানো
     fireMessages.forEach((msg, i) => {
-      setTimeout(() => api.sendMessage(msg, thread), i * 1500); // প্রতি 1.5 সেকেন্ডে একবার
+      setTimeout(() => api.sendMessage(msg, thread), i * 1500);
     });
 
     return;
   }
 
-  // ❄️ ফায়ার OFF করা হলে
+  // ❄️ Fire OFF
   if (sub === "off") {
     if (!state.enabled)
       return api.sendMessage("ফায়ার মোড ইতিমধ্যে OFF আছে 🧊", thread);
@@ -79,7 +77,7 @@ module.exports.run = async function ({ api, event, args }) {
     return;
   }
 
-  // শুধু ".fire" দিলে স্ট্যাটাস দেখানো
+  // স্ট্যাটাস দেখানো
   api.sendMessage(
     `ফায়ার মোড বর্তমানে ${state.enabled ? "🔥 ON" : "🧊 OFF"} অবস্থায় আছে।`,
     thread
