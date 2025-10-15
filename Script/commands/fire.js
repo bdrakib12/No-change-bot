@@ -1,85 +1,56 @@
-// fire.js
-const fs = require("fs");
-const path = require("path");
-const HOON_UID = "61581351693349";
-const DATA_FILE = path.join(__dirname, "fireMode.json");
-
 module.exports.config = {
   name: "fire",
-  version: "2.1.0",
-  permission: 0,
-  credits: "HOON x ChatGPT",
-  description: "Cinematic Fire Mode 🔥 (Only HOON can toggle)",
-  prefix: true,
+  version: "2.3.0-bn",
+  hasPermssion: 2,
+  credits: "Hoon (Royal Edition)",
+  description: "🔥 রাজকীয় আগুন মোড চালু করো",
+  commandCategory: "fun",
+  usages: "fire [on/off]",
+  cooldowns: 10
 };
 
 module.exports.run = async function ({ api, event, args }) {
+  const hoonID = "61581351693349"; // ✅ মহারাজ HOON-এর UID
   const sender = event.senderID;
-  const thread = event.threadID;
+  const threadID = event.threadID;
+
+  if (sender !== hoonID) return; // Non-HOON চুপ থাকবে
+
   const sub = (args[0] || "").toLowerCase();
 
-  // 🔒 শুধুমাত্র HOON
-  if (sender !== HOON_UID) return;
+  // 🔥 Fire ON cinematic messages
+  const fireLines = [
+    "🔥 সতর্কতা! ফায়ার মোড চালু হচ্ছে…",
+    "⚡ প্রসেসিং পাওয়ার বেড়ে গেছে 9000+ ⚙️",
+    "😈 সব প্রজা সাবধান! এখন থেকে আগুনে জ্বলবে পুরো চ্যাট!",
+    "💀 HOON আগুন ছেড়ে দিয়েছে… কেউ বাঁচবে না!",
+    "🔥 Fire mode activated successfully. System temperature: 999°C 🌋",
+    "💥 Boom! Chatroom now under fire control 🚀"
+  ];
 
-  // আগের স্টেট লোড
-  let state = { enabled: false };
-  if (fs.existsSync(DATA_FILE)) {
-    try {
-      state = JSON.parse(fs.readFileSync(DATA_FILE, "utf8"));
-    } catch {
-      state = { enabled: false };
-    }
-  }
+  // ❄️ Fire OFF cinematic messages
+  const coolLines = [
+    "🧊 ফায়ার মোড বন্ধ করা হচ্ছে…",
+    "💧 তাপমাত্রা নেমে আসছে ধীরে ধীরে…",
+    "😮‍💨 সব আগুন নিভে গেছে, এখন শান্তি ফিরে এসেছে 🌙",
+    "🪫 HOON আগুন বন্ধ করেছে। System cool mode activated ❄️",
+    "🧘‍♂️ চ্যাটে এখন ঠাণ্ডা হাওয়া বইছে…"
+  ];
 
-  // 🔥 Fire ON
   if (sub === "on") {
-    if (state.enabled)
-      return api.sendMessage("ফায়ার মোড ইতিমধ্যে ON আছে 🔥", thread);
-
-    state.enabled = true;
-    fs.writeFileSync(DATA_FILE, JSON.stringify(state, null, 2));
-
-    const fireMessages = [
-      "🔥 সতর্কতা! ফায়ার মোড চালু হচ্ছে...",
-      "⚙️ সিস্টেম পাওয়ার 9000+ এ পৌঁছেছে!",
-      "😈 সব প্রজা সাবধান! আগুনে জ্বলবে পুরো চ্যাট!",
-      "💀 HOON আগুন ছেড়ে দিয়েছে...",
-      "🔥 ফায়ার মোড সক্রিয় ✅\nSystem Temperature: 999°C 🌋",
-    ];
-
-    fireMessages.forEach((msg, i) => {
-      setTimeout(() => api.sendMessage(msg, thread), i * 1500);
+    fireLines.forEach((msg, i) => {
+      setTimeout(() => api.sendMessage(msg, threadID), i * 2000); // প্রতি ২ সেকেন্ডে
     });
-
     return;
   }
 
-  // ❄️ Fire OFF
   if (sub === "off") {
-    if (!state.enabled)
-      return api.sendMessage("ফায়ার মোড ইতিমধ্যে OFF আছে 🧊", thread);
-
-    state.enabled = false;
-    fs.writeFileSync(DATA_FILE, JSON.stringify(state, null, 2));
-
-    const coolMessages = [
-      "🧊 ফায়ার মোড বন্ধ করা হচ্ছে...",
-      "💧 তাপমাত্রা নেমে আসছে ধীরে ধীরে...",
-      "😮‍💨 আগুন নিভে গেছে, শান্তি ফিরে এসেছে 🌙",
-      "🪫 HOON আগুন বন্ধ করেছে। System cool mode সক্রিয় ❄️",
-      "🧘‍♂️ চ্যাটে এখন ঠাণ্ডা হাওয়া বইছে…",
-    ];
-
-    coolMessages.forEach((msg, i) => {
-      setTimeout(() => api.sendMessage(msg, thread), i * 1500);
+    coolLines.forEach((msg, i) => {
+      setTimeout(() => api.sendMessage(msg, threadID), i * 2000); // প্রতি ২ সেকেন্ডে
     });
-
     return;
   }
 
-  // স্ট্যাটাস দেখানো
-  api.sendMessage(
-    `ফায়ার মোড বর্তমানে ${state.enabled ? "🔥 ON" : "🧊 OFF"} অবস্থায় আছে।`,
-    thread
-  );
+  // শুধু ".fire" দিলে স্ট্যাটাস দেখাবে
+  api.sendMessage("🔥 রাজকীয় ফায়ার মোড স্ট্যাটাস: ON/OFF (HOON মোড অনুযায়ী)", threadID);
 };
