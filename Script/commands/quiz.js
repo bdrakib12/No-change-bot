@@ -8,11 +8,11 @@ module.exports.config = {
     cooldowns: 5,
     dependencies: {
         "axios": "",
-        "@vitalets/google-translate-api": ""
+        "google-translate-api-x": ""
     }
 };
 
-const translate = require("@vitalets/google-translate-api");
+const translate = require("google-translate-api-x");
 
 module.exports.handleReaction = ({ api, event, handleReaction }) => {
     if (event.userID != handleReaction.author) return;
