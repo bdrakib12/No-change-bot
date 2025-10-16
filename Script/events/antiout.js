@@ -1,37 +1,27 @@
 module.exports.config = {
   name: "antiout",
   eventType: ["log:unsubscribe"],
-  version: "1.0.1",
+  version: "0.0.1",
   credits: "𝐂𝐘𝐁𝐄𝐑 ☢️_𖣘 -𝐁𝐎𝐓 ⚠️ 𝑻𝑬𝑨𝑴_ ☢️",
-  description: "Prevents members from leaving the group without permission (Mafia Style)"
+  description: "Listen events"
 };
 
-module.exports.run = async function ({ event, api, Threads, Users }) {
-  const data = (await Threads.getData(event.threadID)).data || {};
-  if (data.antiout === false) return;
+module.exports.run = async({ event, api, Threads, Users }) => {
+  let data = (await Threads.getData(event.threadID)).data || {};
+  if (data.antiout == false) return;
+  if (event.logMessageData.leftParticipantFbId == api.getCurrentUserID()) return;
 
-  // যদি বট নিজেই লিভ করে, কিছু করবে না
-  if (event.logMessageData.leftParticipantFbId === api.getCurrentUserID()) return;
-
-  // লিভ নেওয়া মেম্বারের নাম
-  const name =
-    global.data.userName.get(event.logMessageData.leftParticipantFbId) ||
-    await Users.getNameUser(event.logMessageData.leftParticipantFbId);
-
-  // গ্রুপের নাম
+  const name = global.data.userName.get(event.logMessageData.leftParticipantFbId) || await Users.getNameUser(event.logMessageData.leftParticipantFbId);
   const threadName = await Threads.getName(event.threadID);
 
-  // ইউজার নিজে লিভ করলে self-separation
-  const type = (event.author === event.logMessageData.leftParticipantFbId)
-    ? "self-separation"
-    : "kick";
+  const type = (event.author == event.logMessageData.leftParticipantFbId) ? "self-separation" : "Koi Ase Pichware Mai Lath Marta Hai?";
 
-  if (type === "self-separation") {
-    api.addUserToGroup(event.logMessageData.leftParticipantFbId, event.threadID, (error) => {
+  if (type == "self-separation") {
+    api.addUserToGroup(event.logMessageData.leftParticipantFbId, event.threadID, (error, info) => {
       if (error) {
         api.sendMessage(
 `😎 সরি বস... চেষ্টা করেও ওই আবালরে এড়াতে পারলাম না 😞
-${name} হয়তো ব্লক করছে, অথবা তার আইডিতে Messenger অপশন বন্ধ — তাই এড করা সম্ভব হয়নি।  
+${name} হয়তো ব্লক করেছে বা মেসেঞ্জার বন্ধ — তাই এড করা সম্ভব হয়নি।  
 
 ⚠️ তবে মনে রাখুক—এই সিস্টেম মাফ করে না!  
 পরের বার এমন ঘটনা ঘটলে মাফিয়া মোড নিজে থেকেই একশন নেবে 😈  
