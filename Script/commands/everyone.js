@@ -1,6 +1,6 @@
 module.exports.config = {
   name: "everyone",
-  version: "1.1.0",
+  version: "1.2.0",
   hasPermssion: 0,
   credits: "𝐂𝐘𝐁𝐄𝐑 ☢️ BOT TEAM",
   description: "Mention everyone in the group with optional custom message",
@@ -17,12 +17,13 @@ module.exports.run = async function({ api, event, args }) {
     const threadInfo = await api.getThreadInfo(threadID);
     const mentions = threadInfo.participantIDs.map(id => ({ id, tag: "@everyone" }));
 
-    // Custom message বা default message
-    const customMsg = args.join(" ").trim() || "@everyone সবাই মনোযোগ দাও! 😎";
+    // custom message
+    const extraMsg = args.join(" ").trim();
+    const messageBody = extraMsg ? `@everyone ${extraMsg}` : "@everyone সবাই মনোযোগ দাও! 😎";
 
     // মেসেজ পাঠানো
     return api.sendMessage({
-      body: customMsg,
+      body: messageBody,
       mentions // সব মেম্বার এখানে mention হবে
     }, threadID);
 
