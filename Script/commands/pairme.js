@@ -2,10 +2,10 @@ const fs = require("fs");
 
 module.exports.config = {
   name: "pairme",
-  version: "1.0.1",
+  version: "1.0.2",
   hasPermssion: 0,
   credits: "𝐂𝐘𝐁𝐄𝐑 ☢️_𖣘 -𝐁𝐎𝐓 ⚠️ 𝑻𝑬𝐀𝐌_ ☢️",
-  description: "Pair yourself with a mentioned or replied user (photo version)",
+  description: "Pair yourself with someone (photo version) with romantic quotes",
   commandCategory: "Picture",
   cooldowns: 5,
   dependencies: {
@@ -67,22 +67,34 @@ module.exports.run = async function ({ api, event }) {
   const fs = require("fs-extra");
   const { threadID, messageID, senderID, mentions, messageReply } = event;
 
-  // 🧩 Determine partner (reply > mention)
+  // 🧩 Determine partner (reply > mention > random)
   let partnerID = null;
 
   if (messageReply && messageReply.senderID !== senderID) {
     partnerID = messageReply.senderID;
   } else if (Object.keys(mentions).length > 0) {
     partnerID = Object.keys(mentions)[0];
-  }
-
-  if (!partnerID) {
-    return api.sendMessage("⚠️ ব্যবহার: .pairme লিখে কাউকে মেনশন করুন অথবা তার মেসেজে রিপ্লাই করুন 💞", threadID, messageID);
+  } else {
+    // Random partner if no reply/mention
+    const threadInfo = await api.getThreadInfo(threadID);
+    const participants = threadInfo.participantIDs.filter(id => id != senderID);
+    if (participants.length === 0) return api.sendMessage("😅 এখানে pairing করার মতো কেউ নাই!", threadID, messageID);
+    partnerID = participants[Math.floor(Math.random() * participants.length)];
   }
 
   // Compatibility %
   const percentages = ['21%', '67%', '19%', '37%', '17%', '96%', '52%', '62%', '76%', '83%', '100%', '99%', '0%', '48%'];
   const matchRate = percentages[Math.floor(Math.random() * percentages.length)];
+
+  // Romantic quotes
+  const quotes = [
+    "💖 প্রেমের পথে একসাথে থাকো!",
+    "🌹 তুমি এবং আমি, এক জীবনের সঙ্গী।",
+    "💌 ভালোবাসা শুধু অনুভূতিতে, না কি ছবিতেও!",
+    "✨ তোমাদের এই পেয়ার মধুর হোক!",
+    "❤️ একসাথে হাসি আর সুখের দিন কাটাও!"
+  ];
+  const quote = quotes[Math.floor(Math.random() * quotes.length)];
 
   // User info
   let senderInfo = await api.getUserInfo(senderID);
@@ -98,7 +110,7 @@ module.exports.run = async function ({ api, event }) {
   // Generate image and send
   return makeImage({ one: senderID, two: partnerID }).then(path => {
     api.sendMessage({
-      body: `💞 𝐏𝐀𝐈𝐑 𝐌𝐀𝐓𝐂𝐇 𝐅𝐎𝐔𝐍𝐃 💞\n━━━━━━━━━━━━━━\n🥰 ${senderName} ❤️ ${partnerName}\n💌 Compatibility: ${matchRate}\n━━━━━━━━━━━━━━\n✨ একসাথে থাকো সুখে 💫`,
+      body: `💞 𝐏𝐀𝐈𝐑 𝐌𝐀𝐓𝐂𝐇 𝐅𝐎𝐔𝐍𝐃 💞\n━━━━━━━━━━━━━━\n🥰 ${senderName} ❤️ ${partnerName}\n💌 Compatibility: ${matchRate}\n━━━━━━━━━━━━━━\n✨ ${quote}`,
       mentions: mentionList,
       attachment: fs.createReadStream(path)
     }, threadID, () => fs.unlinkSync(path), messageID);
