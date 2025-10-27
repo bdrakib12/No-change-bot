@@ -8,33 +8,33 @@
     "npm": ">=10.0.0 <13.0.0"
   },
   "scripts": {
-      "start": "node Ullash.js",
+      "start": "node Hoon.js",
       "login": "node login",
       "test": "node --trace-warnings --use_strict --async-stack-traces mirai"
   },
   "repository": {
       "type": "git",
-      "url": "https://github.com/cyber-ullash/CYBER-BOT-COMMUNITY.git"
+      "url": "https://github.com/bdrakib123/cyber-bot-rakib.git"
   },
   "keywords": [
       "bot",
       "facebook",
-      "ullashproject",
+      "hoonproject",
       "messenger",
       "javasvript",
-      "ullash",
-      "cyberullash",
-      "cyberRajib ",
+      "hoon",
+      "cyberhoon",
+      "cyberRakib ",
       "islamick chat bot",
       "grandpa academy",
       "cyberbot.top"
   ],
-  "author": "Ullash ッ",
+  "author": "Hoon",
   "license": "GPL-3.0",
   "bugs": {
-      "url": "https://github.com/cyber-ullash/CYBER-BOT-COMMUNITY/issues"
+      "url": "https://github.com/bdrakib123/cyber-bot-rakib/issues"
   },
-  "homepage": "https://github.com/cyber-ullash/CYBER-BOT-COMMUNITY/issues",
+  "homepage": "https://github.com/bdrakib123/cyber-bot-rakib/issues",
   "dependencies": {
       "@distube/ytdl-core": "^4.13.2",
       "@miraipr0ject/assets": "^1.0.9",
@@ -126,4 +126,4 @@
       "unofficial-fb-chat-api": "^1.0.0",
       "zalgo": "0.0.1"
   }
-  }
+}
