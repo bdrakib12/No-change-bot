@@ -1,9 +1,9 @@
 module.exports.config = {
   name: "arrest",
-  version: "2.0.1",
+  version: "2.0.2",
   hasPermssion: 0,
-  credits: "MAHBUB SHAON",
-  description: "Arrest a friend you mention",
+  credits: "HOON",
+  description: "Arrest a friend you mention (diagnostic build)",
   commandCategory: "tagfun",
   usages: "[mention]",
   cooldowns: 2,
@@ -16,18 +16,28 @@ module.exports.config = {
 };
 
 module.exports.onLoad = async () => {
-  const { resolve } = global.nodemodule["path"];
-  const { existsSync, mkdirSync } = global.nodemodule["fs-extra"];
-  const { downloadFile } = global.utils;
-  const dirMaterial = __dirname + `/cache/canvas/`;
-  const pathFile = resolve(__dirname, "cache", "canvas", "batgiam.png");
+  try {
+    const { resolve } = global.nodemodule["path"];
+    const { existsSync, mkdirSync } = global.nodemodule["fs-extra"];
+    const { downloadFile } = global.utils;
+    const dirMaterial = __dirname + `/cache/canvas/`;
+    const pathFile = resolve(__dirname, "cache", "canvas", "batgiam.png");
 
-  // ensure dir exists
-  if (!existsSync(dirMaterial)) mkdirSync(dirMaterial, { recursive: true });
+    console.log("[arrest:onLoad] dirMaterial:", dirMaterial);
+    if (!existsSync(dirMaterial)) {
+      console.log("[arrest:onLoad] creating dir:", dirMaterial);
+      mkdirSync(dirMaterial, { recursive: true });
+    }
 
-  // download the base image if not exists
-  if (!existsSync(pathFile)) {
-    await downloadFile("https://i.imgur.com/ep1gG3r.png", pathFile);
+    if (!existsSync(pathFile)) {
+      console.log("[arrest:onLoad] downloading base image to:", pathFile);
+      await downloadFile("https://i.imgur.com/ep1gG3r.png", pathFile);
+      console.log("[arrest:onLoad] download complete");
+    } else {
+      console.log("[arrest:onLoad] base image already exists");
+    }
+  } catch (err) {
+    console.error("[arrest:onLoad] ERROR:", err && err.stack ? err.stack : err);
   }
 };
 
@@ -38,49 +48,68 @@ async function makeImage({ one, two }) {
   const jimp = global.nodemodule["jimp"];
   const __root = path.resolve(__dirname, "cache", "canvas");
 
+  let avatarOne, avatarTwo, pathImg;
   try {
-    let batgiam_img = await jimp.read(__root + "/batgiam.png");
-    let pathImg = __root + `/batgiam_${one}_${two}.png`;
-    let avatarOne = __root + `/avt_${one}.png`;
-    let avatarTwo = __root + `/avt_${two}.png`;
+    console.log("[makeImage] starting: one=", one, " two=", two);
+    const basePath = __root + "/batgiam.png";
+    if (!fs.existsSync(basePath)) throw new Error("Base image missing: " + basePath);
 
-    // download avatars (arraybuffer) and write raw buffer
+    let batgiam_img = await jimp.read(basePath);
+    pathImg = __root + `/batgiam_${one}_${two}.png`;
+    avatarOne = __root + `/avt_${one}.png`;
+    avatarTwo = __root + `/avt_${two}.png`;
+
+    console.log("[makeImage] downloading avatar for", one);
     let getAvatarOne = (await axios.get(`https://graph.facebook.com/${one}/picture?width=512&height=512&access_token=6628568379%7Cc1e620fa708a1d5696fb991c1bde5662`, { responseType: 'arraybuffer' })).data;
     fs.writeFileSync(avatarOne, Buffer.from(getAvatarOne));
+    console.log("[makeImage] avatar saved:", avatarOne);
 
+    console.log("[makeImage] downloading avatar for", two);
     let getAvatarTwo = (await axios.get(`https://graph.facebook.com/${two}/picture?width=512&height=512&access_token=6628568379%7Cc1e620fa708a1d5696fb991c1bde5662`, { responseType: 'arraybuffer' })).data;
     fs.writeFileSync(avatarTwo, Buffer.from(getAvatarTwo));
+    console.log("[makeImage] avatar saved:", avatarTwo);
 
-    // make circle avatars
-    let circleOne = await jimp.read(await circle(avatarOne));
-    let circleTwo = await jimp.read(await circle(avatarTwo));
+    console.log("[makeImage] creating circle one");
+    let circleOneBuf = await circle(avatarOne);
+    console.log("[makeImage] creating circle two");
+    let circleTwoBuf = await circle(avatarTwo);
 
-    // composite on base image (positions can be adjusted)
+    let circleOne = await jimp.read(circleOneBuf);
+    let circleTwo = await jimp.read(circleTwoBuf);
+
+    console.log("[makeImage] compositing images");
     batgiam_img.resize(500, 500)
       .composite(circleOne.resize(100, 100), 375, 9)
       .composite(circleTwo.resize(100, 100), 160, 92);
 
     let raw = await batgiam_img.getBufferAsync("image/png");
     fs.writeFileSync(pathImg, raw);
+    console.log("[makeImage] final image written:", pathImg);
 
-    // cleanup avatar temp files
-    try { fs.unlinkSync(avatarOne); } catch (e) { /* ignore */ }
-    try { fs.unlinkSync(avatarTwo); } catch (e) { /* ignore */ }
+    // cleanup avatars
+    try { fs.unlinkSync(avatarOne); console.log("[makeImage] removed temp", avatarOne); } catch (e) { }
+    try { fs.unlinkSync(avatarTwo); console.log("[makeImage] removed temp", avatarTwo); } catch (e) { }
 
     return pathImg;
   } catch (err) {
-    // try cleanup on error
-    try { if (fs.existsSync(avatarOne)) fs.unlinkSync(avatarOne); } catch (e) {}
-    try { if (fs.existsSync(avatarTwo)) fs.unlinkSync(avatarTwo); } catch (e) {}
+    console.error("[makeImage] ERROR:", err && err.stack ? err.stack : err);
+    // try to cleanup on error
+    try { if (avatarOne && fs.existsSync(avatarOne)) fs.unlinkSync(avatarOne); } catch (e) { }
+    try { if (avatarTwo && fs.existsSync(avatarTwo)) fs.unlinkSync(avatarTwo); } catch (e) { }
     throw err;
   }
 }
 
-async function circle(image) {
+async function circle(imagePath) {
   const jimp = require("jimp");
-  image = await jimp.read(image);
-  image.circle();
-  return await image.getBufferAsync("image/png");
+  try {
+    const image = await jimp.read(imagePath);
+    image.circle();
+    return await image.getBufferAsync("image/png");
+  } catch (err) {
+    console.error("[circle] ERROR reading/processing:", imagePath, err && err.stack ? err.stack : err);
+    throw err;
+  }
 }
 
 module.exports.run = async function ({ event, api, args }) {
@@ -88,49 +117,52 @@ module.exports.run = async function ({ event, api, args }) {
   const { threadID, messageID, senderID } = event;
 
   try {
-    // safe check for mentions object
+    // safe mentions handling
     const mentionObj = event.mentions || {};
     const mentionIDs = Object.keys(mentionObj);
 
     if (mentionIDs.length === 0) {
-      // no mention -> tell the user how to use
-      return api.sendMessage("কোনো কারো ম্যানশন করো। উদাহরণ: arrest @user", threadID, messageID);
+      return api.sendMessage("ব্যবহার: arrest @username — দয়া করে একজনকে ম্যানশন করো", threadID, messageID);
     }
 
-    // take the first mentioned user's id
     const mention = mentionIDs[0];
-    // mentionObj[mention] typically holds the display name, make sure it's string
-    const tag = (typeof mentionObj[mention] === "string") ? mentionObj[mention].replace("@", "") : "Friend";
+    if (mention === senderID) return api.sendMessage("নিজেকে Arrest করতে পারবে না 😅", threadID, messageID);
 
-    // prevent self-arrest
-    if (mention === senderID) {
-      return api.sendMessage("নিজেকে Arrest করা যাবে না 😅", threadID, messageID);
+    // call makeImage with diagnostics
+    let path;
+    try {
+      console.log("[run] calling makeImage with:", { one: senderID, two: mention });
+      path = await makeImage({ one: senderID, two: mention });
+      console.log("[run] makeImage returned:", path);
+    } catch (err) {
+      console.error("[run] makeImage error:", err && err.stack ? err.stack : err);
+      // send short error to chat for debugging
+      const shortMsg = (err && err.message) ? `ERR: ${err.message}` : "Unknown error while making image";
+      return api.sendMessage(`কিছু সমস্যা হয়েছে: ${shortMsg}\n(কনসোলে পুরো স্ট্যাক দেখো)`, threadID, messageID);
     }
 
-    const one = senderID, two = mention;
-    const path = await makeImage({ one, two });
-
-    // send message with mention and attachment, then cleanup
+    // send and cleanup
     await api.sendMessage({
       body:
         "╭──────•◈•───────╮\n" +
         " 𝗜𝘀𝗹𝗮𝗺𝗶𝗰𝗸 𝗰𝗵𝗮𝘁 𝗯𝗼𝘁 \n\n" +
-        `—হালা গরু চোর তোরে আজকে হাতে নাতে ধরছি পালাবি কই_😸💁‍♀️ @${tag}\n\n\n` +
+        `—হালা গরু চোর তোরে আজকে হাতে নাতে ধরছি পালাবি কই_😸💁‍♀️ @${(typeof mentionObj[mention] === "string") ? mentionObj[mention].replace("@","") : "Friend"}\n\n\n` +
         "𝗠𝗔𝗗𝗘 𝗕𝗬:\n Ullash ッ\n" +
         "╰──────•◈•───────╯",
       mentions: [{
-        tag: tag,
+        tag: (typeof mentionObj[mention] === "string") ? mentionObj[mention].replace("@","") : "Friend",
         id: mention
       }],
       attachment: fs.createReadStream(path)
     }, threadID, async (err) => {
-      // remove generated image after send
-      try { fs.unlinkSync(path); } catch (e) { /* ignore */ }
-      if (err) console.error(err);
+      try { fs.unlinkSync(path); } catch (e) { }
+      if (err) {
+        console.error("[run] sendMessage error:", err && err.stack ? err.stack : err);
+      }
     }, messageID);
 
-  } catch (error) {
-    console.error(error);
-    return api.sendMessage("কিছু সমস্যা হয়েছে। আবার চেষ্টা করো।", threadID, messageID);
+  } catch (err) {
+    console.error("[run] UNEXPECTED ERROR:", err && err.stack ? err.stack : err);
+    return api.sendMessage("কিছু সমস্যা হয়েছে। বিস্তারিত কনসোলে দেখো।", threadID, messageID);
   }
 };
