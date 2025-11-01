@@ -1,46 +1,22 @@
-module.exports = function ({ api, models, Users, Threads, Currencies }) {
+module.exports = function ({api ,models, Users, Threads, Currencies }) {
     const logger = require("../../utils/log.js");
-    const moment = require("moment"); // moment.js is retained for consistency
-    
-    // Optimized getText2 creation: Define a factory function
-    const createGetText2 = (cmd) => {
-        if (cmd.languages && typeof cmd.languages === 'object') {
-            return (...values) => {
-                var lang = cmd.languages[global.config.language]?.[values[0]] || '';
-                // ✅ Fixed loop index
-                for (var i = values.length - 1; i > 0; i--) {
-                    const expReg = RegExp('%' + i, 'g');
-                    lang = lang.replace(expReg, values[i]);
-                }
-                return lang;
-            };
-        } else {
-            return () => {};
-        }
-    };
+   	const moment = require("moment");
 
-    return async function ({ event }) { // Made function async
+    return function ({ event }) {
         const timeStart = Date.now()
-        // ✅ Fixed minute formatting
-        const time = moment.tz("Asia/Dhaka").format("HH:mm:ss L");
+        const time = moment.tz("Asia/Dhaka").format("HH:MM:ss L");
         const { userBanned, threadBanned } = global.data;
         const { events } = global.client;
         const { allowInbox, DeveloperMode } = global.config;
         var { senderID, threadID } = event;
         senderID = String(senderID);
         threadID = String(threadID);
-        
-        if (userBanned.has(senderID)|| threadBanned.has(threadID) || (allowInbox == false && senderID == threadID)) return;
-        
-        // ✅ Ensure logMessageType is set
-        if (!event.logMessageType) event.logMessageType = event.type;
-
-        // ✅ Ensure events is a Map
-        const eventsMap = events || new Map();
-        for (const [key, eventRun] of eventsMap.entries()) {
-            if (eventRun.config.eventType && eventRun.config.eventType.indexOf(event.logMessageType) !== -1) {
+        if (userBanned.has(senderID)|| threadBanned.has(threadID) || allowInbox == ![] && senderID == threadID) return;
+        if (event.type == "change_thread_image") event.logMessageType = "change_thread_image";
+        for (const [key, value] of events.entries()) {
+            if (value.config.eventType.indexOf(event.logMessageType) !== -1) {
+                const eventRun = events.get(key);
                 try {
-                    const getText2 = createGetText2(eventRun); // Reuse the factory function
                     const Obj = {};
                     Obj.api = api
                     Obj.event = event
@@ -48,18 +24,14 @@ module.exports = function ({ api, models, Users, Threads, Currencies }) {
                     Obj.Users= Users 
                     Obj.Threads = Threads
                     Obj.Currencies = Currencies 
-                    Obj.getText = getText2;
-                    
-                    // ✅ Ensure run exists and is a function
-                    if (typeof eventRun.run === 'function') await eventRun.run(Obj); 
-
-                    if (DeveloperMode == true) // Simplified boolean check
-                        logger(global.getText('handleEvent', 'executeEvent', time, eventRun.config.name, threadID, Date.now() - timeStart), '[ Event ]');
+                    eventRun.run(Obj);
+                    if (DeveloperMode == !![]) 
+                    	logger(global.getText('handleEvent', 'executeEvent', time, eventRun.config.name, threadID, Date.now() - timeStart), '[ Event ]');
                 } catch (error) {
-                    logger(global.getText('handleEvent', 'eventError', eventRun.config.name, error.stack || error.message), "error");
+                    logger(global.getText('handleEvent', 'eventError', eventRun.config.name, JSON.stringify(error)), "error");
                 }
             }
         }
         return;
     };
-}
+            }
