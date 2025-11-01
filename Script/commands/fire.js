@@ -23,7 +23,8 @@ module.exports.run = async function ({ api, event, args }) {
     "😈 সব প্রজা সাবধান! এখন থেকে আগুনে জ্বলবে পুরো চ্যাট!",
     "💀 HOON আগুন ছেড়ে দিয়েছে… কেউ বাঁচবে না!",
     "🔥 Fire mode activated successfully. System temperature: 999°C 🌋",
-    "💥 Boom! Chatroom now under fire control 🚀"
+    "💥 Boom! Chatroom now under fire control 🚀",
+    " 🫡সবাই মহারাজ HOON কে সালাম জানাও 😽"
   ];
 
   const coolLines = [
