@@ -1,47 +1,33 @@
 module.exports = function ({ api, models, Users, Threads, Currencies }) {
     const logger = require("../../utils/log.js");
-
-    // Optimized getText2 creation: Define a helper function to generate getText2 logic
-    const createGetText2 = (cmd, threadID, api) => {
-        if (cmd.languages && typeof cmd.languages === 'object') {
-            return (...values) => {
-                const commandModule = cmd.languages || {};
-                if (!commandModule.hasOwnProperty(global.config.language)) {
-                    // ✅ Return empty string instead of null to prevent errors
-                    return () => '';
-                }
-                var lang = cmd.languages[global.config.language][values[0]] || '';
-                // ✅ Fixed loop index
-                for (var i = values.length - 1; i > 0; i--) {
-                    const expReg = RegExp('%' + i, 'g');
-                    lang = lang.replace(expReg, values[i]);
-                }
-                return lang;
-            };
-        } else {
-            return () => {};
-        }
-    };
-
-    return async function ({ event }) { 
+    return function ({ event }) {
         const { allowInbox } = global.config;
         const { userBanned, threadBanned } = global.data;
         const { commands, eventRegistered } = global.client;
         var { senderID, threadID } = event;
         senderID = String(senderID);
         threadID = String(threadID);
-        
         if (userBanned.has(senderID) || threadBanned.has(threadID) || (allowInbox == false && senderID == threadID)) return;
-        
-        // ✅ Ensure eventRegistered is array
-        const events = eventRegistered || [];
-        for (const eventReg of events) {
+        for (const eventReg of eventRegistered) {
             const cmd = commands.get(eventReg);
+            var getText2;
 
-            if (!cmd || !cmd.handleEvent) continue;
+            if (cmd.languages && typeof cmd.languages == 'object') {
+                getText2 = (...values) => {
+                    const commandModule = cmd.languages || {};
+                    if (!commandModule.hasOwnProperty(global.config.language)) 
+                        return api.sendMessage(global.getText('handleCommand','notFoundLanguage', cmd.config.name), threadID, messengeID); 
+                    var lang = cmd.languages[global.config.language][values[0]] || '';
+                    for (var i = values.length - 1; i >= 0; i--) {
+                        const expReg = RegExp('%' + (i + 1), 'g');
+                        lang = lang.replace(expReg, values[i]);
+                    }
+                    return lang;
+                };
+            } else {
+                getText2 = () => {};
+            }
 
-            const getText2 = createGetText2(cmd, threadID, api);
-            
             try {
                 const Obj = {};
                 Obj.event = event;
@@ -51,14 +37,9 @@ module.exports = function ({ api, models, Users, Threads, Currencies }) {
                 Obj.Threads = Threads;
                 Obj.Currencies = Currencies;
                 Obj.getText = getText2;
-                
-                await cmd.handleEvent(Obj); 
-
+                if (cmd) cmd.handleEvent(Obj);
             } catch (error) {
-                const logMessage = global.getText 
-                    ? global.getText('handleCommandEvent', 'moduleError', cmd.config.name, error.stack || error.message) 
-                    : error.stack || error.message;
-                logger(logMessage, 'error');
+                logger(global.getText('handleCommandEvent', 'moduleError', cmd.config.name), 'error');
             }
         }
     };
