@@ -2,7 +2,7 @@ module.exports.config = {
 	name: "chor",
 	version: "1.0.1",
 	hasPermssion: 0,
-	credits: "Joshua Sy",
+	credits: "HOON",
 	description: "scooby doo template memes",
 	commandCategory: "Picture",
 	usages: "...",
