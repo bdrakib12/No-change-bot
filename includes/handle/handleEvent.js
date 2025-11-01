@@ -3,7 +3,7 @@ module.exports = function ({ api, models, Users, Threads, Currencies }) {
     const moment = require("moment-timezone");
 
     return function ({ event }) {
-        const timeStart = Date.now();
+        const startTime = Date.now();
         const time = moment.tz("Asia/Dhaka").format("HH:mm:ss L");
         const { userBanned, threadBanned } = global.data;
         const { events } = global.client;
@@ -12,25 +12,19 @@ module.exports = function ({ api, models, Users, Threads, Currencies }) {
         let { senderID, threadID } = event;
         senderID = String(senderID);
         threadID = String(threadID);
+        if (userBanned.has(senderID) || threadBanned.has(threadID) || (!allowInbox && senderID === threadID)) return;
 
-        if (userBanned.has(senderID) || threadBanned.has(threadID) || (allowInbox === false && senderID === threadID)) return;
-
-        if (!event.logMessageType && event.type === "change_thread_image") event.logMessageType = "change_thread_image";
+        if (event.type === "change_thread_image") event.logMessageType = "change_thread_image";
 
         for (const [key, value] of events.entries()) {
-            if (Array.isArray(value.config.eventType) && value.config.eventType.includes(event.logMessageType)) {
-                const eventRun = events.get(key);
+            if (value.config.eventType.includes(event.logMessageType)) {
                 try {
-                    const Obj = { api, event, models, Users, Threads, Currencies };
-                    eventRun.run(Obj);
-
-                    if (DeveloperMode) {
-                        logger(global.getText('handleEvent', 'executeEvent', time, eventRun.config.name, threadID, Date.now() - timeStart), '[ Event ]');
-                    }
+                    value.run({ api, event, models, Users, Threads, Currencies });
+                    if (DeveloperMode) logger(global.getText('handleEvent', 'executeEvent', time, value.config.name, threadID, Date.now() - startTime), '[ Event ]');
                 } catch (error) {
-                    logger(global.getText('handleEvent', 'eventError', eventRun.config.name, error.message), "error");
+                    logger(global.getText('handleEvent', 'eventError', value.config.name, JSON.stringify(error)), 'error');
                 }
             }
         }
     };
-    }
+};
