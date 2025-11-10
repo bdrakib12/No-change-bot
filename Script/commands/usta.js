@@ -67,24 +67,24 @@ module.exports.run = async function ({ api, event }) {
     let mentions = [];
     let partnerID;
 
-    if (event.type == "message_reply") {
+    if (event.messageReply) {
         partnerID = event.messageReply.senderID;
         mentions.push({ id: senderID, tag: (await api.getUserInfo(senderID))[senderID].name });
         mentions.push({ id: partnerID, tag: (await api.getUserInfo(partnerID))[partnerID].name });
+
     } else if (event.mentions && Object.keys(event.mentions).length > 0) {
         partnerID = Object.keys(event.mentions)[0];
         mentions.push({ id: senderID, tag: (await api.getUserInfo(senderID))[senderID].name });
         mentions.push({ id: partnerID, tag: (await api.getUserInfo(partnerID))[partnerID].name });
-    } else return api.sendMessage("রিপ্লাই বা ম্যানশন করতে হবে।", threadID);
 
-    // Random match percentage
-    const percentages = ['21%', '67%', '19%', '37%', '17%', '96%', '52%', '62%', '76%', '83%', '100%', '99%', '0%', '48%'];
-    const matchRate = percentages[Math.floor(Math.random() * percentages.length)];
+    } else {
+        return api.sendMessage("রিপ্লাই বা ম্যানশন করতে হবে।", threadID);
+    }
 
     let one = senderID, two = partnerID;
     return makeImage({ one, two }).then(path => {
         api.sendMessage({
-            body: `🥰 Successful Pairing!\n💌 Compatibility Score: ${matchRate}`,
+            body: "এই নে উষ্টা খা",
             mentions,
             attachment: fs.createReadStream(path)
         }, threadID, () => fs.unlinkSync(path), messageID);
