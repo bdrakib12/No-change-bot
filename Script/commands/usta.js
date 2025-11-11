@@ -43,7 +43,11 @@ async function makeImage({ one, two }) {
 
     let circleOne = await jimp.read(await circle(avatarOne));
     let circleTwo = await jimp.read(await circle(avatarTwo));
-    base_img.composite(circleOne.resize(150, 150), 140, 200).composite(circleTwo.resize(150, 150), 980, 200);
+
+    // ✅ Hug style avatar placement (same as hugv2)
+    base_img
+        .composite(circleOne.resize(100, 100), 370, 40)   // sender’s face
+        .composite(circleTwo.resize(100, 100), 330, 150); // mentioned/replied face
 
     let raw = await base_img.getBufferAsync("image/png");
     fs.writeFileSync(pathImg, raw);
