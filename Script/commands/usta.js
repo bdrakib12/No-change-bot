@@ -51,10 +51,9 @@ async function makeImage({ one, two }) {
     let circleOne = await jimp.read(await circle(avatarOne));
     let circleTwo = await jimp.read(await circle(avatarTwo));
 
-    // === Composite avatars on uata.png ===
-    pairing_img.
-      composite(circleOne.resize(75, 75), 90, 165).
-      composite(circleTwo.resize(75, 75), 30, 165);
+    // === Composite avatars on uata.png ==
+pairing_img.composite(circleOne.resize(60, 60), 660, 160) 
+           .composite(circleTwo.resize(70, 70), 220, 160); 
 
     let raw = await pairing_img.getBufferAsync("image/png");
     fs.writeFileSync(pathImg, raw);
