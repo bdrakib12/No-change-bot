@@ -52,7 +52,7 @@ async function makeImage({ one, two }) {
     let circleTwo = await jimp.read(await circle(avatarTwo));
 
     // === Composite avatars on uata.png ==
-pairing_img.composite(circleOne.resize(60, 60), 660, 160) 
+pairing_img.composite(circleOne.resize(60, 60), 660, 160);
            .composite(circleTwo.resize(70, 70), 220, 160); 
 
     let raw = await pairing_img.getBufferAsync("image/png");
