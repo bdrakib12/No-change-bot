@@ -8,7 +8,7 @@ const baseApiUrl = async () => {
   );
   // ধরে নেওয়া হলো baseApiUrl() একই রকমভাবে কাজ করবে এবং অন্য API গুলিও এর মাধ্যমে পাওয়া যাবে।
   // তবে TikTok এর জন্য নির্দিষ্ট API url টি সরাসরি ব্যবহার করা হলো।
-  return 'https://mahbub-ullash.cyberbot.top/api'; 
+  return 'https://mahbub-ullash.cyberbot.top/api/tikdl?url=; 
 };
 
 // ফাইল ডাউনলোড করার ফাংশন (dipto)
