@@ -28,14 +28,10 @@
         }
     },
     "APPSTATEPATH": "appstate.json",
-
-    // ====== নতুন এড করা অটো কুকি রিফ্রেশ ফিচার (১ ঘণ্টা পরপর) ======
     "AUTO_REFRESH_COOKIE": true,
-    "REFRESH_INTERVAL": 3600000,           // ৩৬০০০০০ ms = ১ ঘণ্টা (চাইলে ১৮০০০০০ = ৩০ মিনিট করতে পারো)
-    "FORCE_LOGIN_ON_REFRESH": true,        // নতুন কুকি পেলে জোর করে রিলগিন করবে
-    "LOG_REFRESH_STATUS": true,            // কনসোলে লগ দেখাবে যখন কুকি রিফ্রেশ হবে
-    // ====================================================================
-
+    "REFRESH_INTERVAL": 1800000,
+    "FORCE_LOGIN_ON_REFRESH": true,
+    "LOG_REFRESH_STATUS": true,
     "FCAOption": {
         "forceLogin": true,
         "listenEvents": true,
