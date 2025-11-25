@@ -58,8 +58,15 @@ module.exports.onLoad = function ({ api }) {
   if (global.azanInterval) clearInterval(global.azanInterval);
 
   async function checkAndSend() {
-    const now = new Date();
-    const timeNow = now.toTimeString().slice(0, 5); // HH:MM
+    // 🔥 Asia/Dhaka টাইমজোন অনুযায়ী সময় নিলাম
+    const timeNow = new Date()
+      .toLocaleTimeString("en-GB", {
+        timeZone: "Asia/Dhaka",
+        hour12: false,
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+      .slice(0, 5); // "HH:MM"
 
     const match = prayerTimes.find(p => p.time === timeNow);
     if (match) {
