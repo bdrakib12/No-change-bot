@@ -1,22 +1,22 @@
 module.exports.config = {
   name: "azan",
-  version: "3.0.0",
-  credits: "Optimized & beautified by GPT-5",
-  description: "আজানের সময় সুন্দর ইসলামিক বার্তা পাঠায় (ভিডিও ছাড়া)",
+  version: "3.2.0",
+  credits: "Rakib & GPT-5.1",
+  description: "আজানের সময় সব গ্রুপে ইসলামিক বার্তা পাঠায় (ভিডিও ছাড়া)",
   commandCategory: "auto",
 };
 
-module.exports.run = async function ({ api }) {
-  const prayerTimes = [
-    { time: "05:35", name: "🌅 ফজর" },
-    { time: "13:00", name: "☀️ যোহর" },
-    { time: "16:30", name: "🌤 আসর" },
-    { time: "19:05", name: "🌇 মাগরিব" },
-    { time: "20:15", name: "🌙 ইশা" },
-  ];
+const prayerTimes = [
+  { time: "05:35", name: "🌅 ফজর" },
+  { time: "13:00", name: "☀️ যোহর" },
+  { time: "16:30", name: "🌤 আসর" },
+  { time: "19:05", name: "🌇 মাগরিব" },
+  { time: "20:15", name: "🌙 ইশা" },
+];
 
-  async function sendAzan(prayer) {
-    const message = `
+// আজানের মেসেজ বানিয়ে সব গ্রুপে পাঠায়
+async function sendAzanToAllThreads(api, prayer) {
+  const message = `
 ━━━━━━━━━━━━━━━━━━━
 🕌 *${prayer.name} নামাজের সময় হয়েছে!*  
 🕋 “হে বিশ্বাসীগণ! নামাজ ও ধৈর্যের মাধ্যমে সাহায্য প্রার্থনা করো।”  
@@ -25,22 +25,58 @@ module.exports.run = async function ({ api }) {
 🌸 আল্লাহর ডাকে সাড়া দাও — নামাজে মন দাও, এতে শান্তি আছে।  
 🤲 আল্লাহ আমাদের নামাজে মনোযোগ ও নিয়মিততা দান করুন।
 ━━━━━━━━━━━━━━━━━━━
-    `.trim();
+  `.trim();
 
-    try {
-      api.sendMessage(message, global.config.ADMINBOT || event.threadID);
-    } catch (err) {
-      console.error("Azan message error:", err);
+  try {
+    let threadIDs = [];
+
+    // যদি বটের সিস্টেমে সব থ্রেড আগেই সেভ থাকে
+    if (global.data && Array.isArray(global.data.allThreadID)) {
+      threadIDs = global.data.allThreadID;
+    } else {
+      // নাহলে API দিয়ে একবার লিস্ট নেবে (অনেক ফ্রেমওয়ার্কে কাজ করে)
+      const threads = await api.getThreadList(100, null, ["INBOX"]);
+      threadIDs = threads
+        .filter(t => t.isGroup === true)   // শুধু গ্রুপ
+        .map(t => t.threadID);
+    }
+
+    // সব গ্রুপে পাঠাও
+    for (const tid of threadIDs) {
+      api.sendMessage(message, tid);
+    }
+
+    console.log(`✅ ${prayer.name} আজান পাঠানো হয়েছে ${threadIDs.length}টা থ্রেডে।`);
+  } catch (err) {
+    console.error("Azan broadcast error:", err);
+  }
+}
+
+// বট অন হওয়া মাত্রই অটো সিস্টেম চালু হবে
+module.exports.onLoad = function ({ api }) {
+  // ডাবল ইনটারভাল এড়িয়ে চলা
+  if (global.azanInterval) clearInterval(global.azanInterval);
+
+  async function checkAndSend() {
+    const now = new Date();
+    const timeNow = now.toTimeString().slice(0, 5); // HH:MM
+
+    const match = prayerTimes.find(p => p.time === timeNow);
+    if (match) {
+      await sendAzanToAllThreads(api, match);
     }
   }
 
-  // প্রতি ১ মিনিটে সময় চেক করবে
-  setInterval(() => {
-    const now = new Date();
-    const timeNow = now.toTimeString().slice(0, 5); // HH:MM ফরম্যাটে
-    const match = prayerTimes.find(p => p.time === timeNow);
-    if (match) sendAzan(match);
-  }, 60 * 1000);
+  // প্রতি ১ মিনিটে সময় মিলিয়ে দেখে
+  global.azanInterval = setInterval(checkAndSend, 60 * 1000);
 
-  console.log("✅ ইসলামিক আজান রিমাইন্ডার চলছে...");
+  console.log("✅ আজান অটো ব্রডকাস্ট সিস্টেম চালু হয়েছে (সব গ্রুপে যাবে)।");
+};
+
+// কেউ চানেলে/গ্রুপে কমান্ড দিলে শুধু কনফার্ম করবে
+module.exports.run = async function ({ api, event }) {
+  return api.sendMessage(
+    "✅ আজান অটো সিস্টেম চালু আছে। নির্ধারিত সময়ে সব গ্রুপে আজান রিমাইন্ডার যাবে ইনশাআল্লাহ।",
+    event.threadID
+  );
 };
