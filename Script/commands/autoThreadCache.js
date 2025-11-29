@@ -87,13 +87,13 @@ async function tryFetchThreadList(api) {
     }
   } catch (e) {}
 
-  // 1) callback-style getThreadList(limit, tagsArray, cb)
+  // 1) callback-style getThreadList(limit, timestamp|null, tagsArray, cb)
   try {
     if (api && typeof api.getThreadList === 'function') {
       const res = await new Promise((resolve, reject) => {
         try {
-          // IMPORTANT: pass an array for tags (many server implementations expect an array)
-          api.getThreadList(100, [], (err, list) => {
+          // IMPORTANT: supply timestamp=null and tags=[] before callback
+          api.getThreadList(100, null, [], (err, list) => {
             if (err) return reject(err);
             resolve(list || []);
           });
@@ -109,11 +109,12 @@ async function tryFetchThreadList(api) {
     console.log(`${LOG} getThreadList(callback) failed:`, safeErrorText(e));
   }
 
-  // 2) promise-style getThreadList(limit, tagsArray)
+  // 2) promise-style getThreadList(limit, timestamp|null, tagsArray)
   if (!fetched) {
     try {
       if (api && typeof api.getThreadList === 'function') {
-        const maybe = api.getThreadList(100, []);
+        // pass null for timestamp and [] for tags
+        const maybe = api.getThreadList(100, null, []);
         if (maybe && typeof maybe.then === 'function') {
           const res = await maybe;
           threads = res;
@@ -126,12 +127,12 @@ async function tryFetchThreadList(api) {
     }
   }
 
-  // 3) getThreads callback (use [] instead of null)
+  // 3) getThreads callback (signature: getThreads(limit, timestamp|null, tagsArray, cb))
   if (!fetched) {
     try {
       if (api && typeof api.getThreads === 'function') {
         const res = await new Promise((resolve, reject) => {
-          api.getThreads(100, [], (err, list) => {
+          api.getThreads(100, null, [], (err, list) => {
             if (err) return reject(err);
             resolve(list || []);
           });
@@ -145,7 +146,7 @@ async function tryFetchThreadList(api) {
     }
   }
 
-  // 4) try other async variations
+  // 4) try other async variations (these might accept different params; keep as-is)
   if (!fetched) {
     try {
       if (api && typeof api.getThreadListAsync === 'function') {
@@ -326,7 +327,7 @@ module.exports.onLoad = async function ({ api }) {
 
 module.exports.config = {
   name: 'autoThreadCache',
-  version: '1.3.0',
+  version: '1.3.1',
   hasPermssion: 0,
   credits: 'Rakib Hasan',
   description: 'Auto thread cache (aggressive). Usage: autoThreadCache status|list|add|clear',
