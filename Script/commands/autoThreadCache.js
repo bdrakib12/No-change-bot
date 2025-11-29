@@ -87,12 +87,13 @@ async function tryFetchThreadList(api) {
     }
   } catch (e) {}
 
-  // 1) callback-style getThreadList(limit, before, cb)
+  // 1) callback-style getThreadList(limit, tagsArray, cb)
   try {
     if (api && typeof api.getThreadList === 'function') {
       const res = await new Promise((resolve, reject) => {
         try {
-          api.getThreadList(100, null, (err, list) => {
+          // IMPORTANT: pass an array for tags (many server implementations expect an array)
+          api.getThreadList(100, [], (err, list) => {
             if (err) return reject(err);
             resolve(list || []);
           });
@@ -108,11 +109,11 @@ async function tryFetchThreadList(api) {
     console.log(`${LOG} getThreadList(callback) failed:`, safeErrorText(e));
   }
 
-  // 2) promise-style getThreadList(limit, before)
+  // 2) promise-style getThreadList(limit, tagsArray)
   if (!fetched) {
     try {
       if (api && typeof api.getThreadList === 'function') {
-        const maybe = api.getThreadList(100, null);
+        const maybe = api.getThreadList(100, []);
         if (maybe && typeof maybe.then === 'function') {
           const res = await maybe;
           threads = res;
@@ -125,12 +126,12 @@ async function tryFetchThreadList(api) {
     }
   }
 
-  // 3) getThreads callback
+  // 3) getThreads callback (use [] instead of null)
   if (!fetched) {
     try {
       if (api && typeof api.getThreads === 'function') {
         const res = await new Promise((resolve, reject) => {
-          api.getThreads(100, null, (err, list) => {
+          api.getThreads(100, [], (err, list) => {
             if (err) return reject(err);
             resolve(list || []);
           });
